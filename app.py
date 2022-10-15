@@ -1,40 +1,68 @@
 # app.py
+from flask import request
+from flask_restx import Resource
 
-from flask import Flask, request
-from flask_restx import Api, Resource
-from flask_sqlalchemy import SQLAlchemy
-from marshmallow import Schema, fields
-
-app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db = SQLAlchemy(app)
+from config import api, app, db
+from models import Movie
+from schema import MovieSchema
 
 
-class Movie(db.Model):
-    __tablename__ = 'movie'
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(255))
-    description = db.Column(db.String(255))
-    trailer = db.Column(db.String(255))
-    year = db.Column(db.Integer)
-    rating = db.Column(db.Float)
-    genre_id = db.Column(db.Integer, db.ForeignKey("genre.id"))
-    genre = db.relationship("Genre")
-    director_id = db.Column(db.Integer, db.ForeignKey("director.id"))
-    director = db.relationship("Director")
-
-class Director(db.Model):
-    __tablename__ = 'director'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(255))
+movie_ns = api.namespace("movies")
+movies_schema = MovieSchema()
+movies_schemas = MovieSchema(many=True)
 
 
-class Genre(db.Model):
-    __tablename__ = 'genre'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(255))
+@movie_ns.route("/")
+class MovieViews(Resource):
+    def get(self):
+        query = Movie.query
 
+        director_id = request.args.get('director_id')
+        if director_id:
+            query = query.filter(Movie.director_id == director_id)
+
+        if genre_id := request.args.get('genre_id'):
+            query = query.filter(Movie.genre_id == genre_id)
+
+        return movies_schemas.dump(query)
+
+    def post(self):
+        data = request.json
+        try:
+            db.session.add(
+                db.session.add(
+                    *data
+                )
+            )
+            db.session.commite()
+            return "Данные добавлены", 201
+        except Exception as e:
+            print(e)
+            db.session.rollback()
+            return e, 200
+
+
+
+@movie_ns.route("/<int:mid>")
+class MovieViews(Resource):
+    def get(self, mid):
+        query = Movie.query.get(mid)
+        return movies_schema.dump(query)
+
+    def put(self, mid):
+        data = request.json
+        try:
+            db.session.query.filter(Movie.id == mid).update(
+                data
+            )
+            db.session.commite()
+            return "Данные добавлены", 201
+        except Exception as e:
+            print(e)
+            db.session.rollback()
+            return e, 200
+        query = Movie.query.get(mid)
+        return movies_schema.dump(query)
 
 
 if __name__ == '__main__':
