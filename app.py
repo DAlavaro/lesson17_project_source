@@ -22,7 +22,7 @@ class MovieViews(Resource):
         if director_id:
             query = query.filter(Movie.director_id == director_id)
 
-        if genre_id := request.args.get('genre_id'):
+        if genre_id:=request.args.get('genre_id'):
             query = query.filter(Movie.genre_id == genre_id)
 
         return movies_schemas.dump(query)
@@ -57,7 +57,7 @@ class MovieViews(Resource):
                 data
             )
             db.session.commit()
-            return "Данные обновлены", 201
+            return "Данные изменены", 201
         except Exception as e:
             print(e)
             db.session.rollback()
