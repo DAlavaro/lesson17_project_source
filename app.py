@@ -1,4 +1,5 @@
 # app.py
+
 from flask import request
 from flask_restx import Resource
 
@@ -30,17 +31,16 @@ class MovieViews(Resource):
         data = request.json
         try:
             db.session.add(
-                db.session.add(
-                    *data
+                Movie(
+                    **data
                 )
             )
-            db.session.commite()
+            db.session.commit()
             return "Данные добавлены", 201
         except Exception as e:
             print(e)
             db.session.rollback()
             return e, 200
-
 
 
 @movie_ns.route("/<int:mid>")
@@ -51,18 +51,29 @@ class MovieViews(Resource):
 
     def put(self, mid):
         data = request.json
+
         try:
-            db.session.query.filter(Movie.id == mid).update(
+            db.session.query(Movie).filter(Movie.id == mid).update(
                 data
             )
-            db.session.commite()
-            return "Данные добавлены", 201
+            db.session.commit()
+            return "Данные обновлены", 201
         except Exception as e:
             print(e)
             db.session.rollback()
             return e, 200
-        query = Movie.query.get(mid)
-        return movies_schema.dump(query)
+
+
+    def delete(self, mid):
+
+        try:
+            db.session.query(Movie).filter(Movie.id == mid).delete()
+            db.session.commit()
+            return "Данные удалены", 201
+        except Exception as e:
+            print(e)
+            db.session.rollback()
+            return e, 200
 
 
 if __name__ == '__main__':
